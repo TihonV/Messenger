@@ -13,7 +13,6 @@ body {
     border: 1px solid #ccc;
 }
 
-/* Шапка */
 .header {
     background: #3b5998;
     color: white;
@@ -29,7 +28,6 @@ body {
     gap: 10px;
 }
 
-/* Навигация */
 .nav {
     background: #f0f0f0;
     padding: 10px 20px;
@@ -50,7 +48,6 @@ body {
     background: #45a049;
 }
 
-/* Авторизация */
 #auth {
     padding: 20px;
     text-align: center;
@@ -84,7 +81,6 @@ button:hover {
     background: #45a049;
 }
 
-/* Лента */
 #newsSection {
     padding: 20px;
 }
@@ -119,7 +115,6 @@ button:hover {
     gap: 5px;
 }
 
-/* Сообщения */
 #messagesSection {
     display: flex;
 }
@@ -188,7 +183,6 @@ button:hover {
     display: inline-block;
 }
 
-/* Профиль */
 #profileSection {
     padding: 20px;
 }
@@ -199,7 +193,6 @@ button:hover {
     border-radius: 4px;
 }
 
-/* Аудио/видео */
 audio, video {
     width: 100%;
     margin-top: 10px;
