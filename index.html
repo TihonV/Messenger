@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <title>Мессенджер</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
     <div class="container">
-        <!-- Авторизация -->
         <div id="auth">
             <h2>Регистрация / Вход</h2>
             <div class="form-group">
@@ -22,9 +22,7 @@
             <button onclick="login()">Войти</button>
         </div>
 
-        <!-- Основной интерфейс -->
         <div id="mainApp" style="display:none;">
-            <!-- Шапка -->
             <div class="header">
                 <h1>Мессенджер</h1>
                 <div class="user-info">
@@ -33,14 +31,12 @@
                 </div>
             </div>
 
-            <!-- Навигация -->
             <div class="nav">
                 <button onclick="showSection('news')">Лента</button>
                 <button onclick="showSection('messages')">Сообщения</button>
                 <button onclick="showSection('profile')">Профиль</button>
             </div>
 
-            <!-- Лента -->
             <div id="newsSection" class="section">
                 <h3>Создать пост</h3>
                 <div class="form-group">
@@ -56,7 +52,6 @@
                 <div id="posts"></div>
             </div>
 
-            <!-- Сообщения -->
             <div id="messagesSection" class="section" style="display:none;">
                 <div class="sidebar">
                     <h3>Каналы</h3>
@@ -82,7 +77,6 @@
                 </div>
             </div>
 
-            <!-- Профиль -->
             <div id="profileSection" class="section" style="display:none;">
                 <h3>Профиль</h3>
                 <div class="profile-info">
@@ -104,12 +98,8 @@
         function showSection(section) {
             document.querySelectorAll('.section').forEach(el => el.style.display = 'none');
             document.getElementById(section + 'Section').style.display = 'block';
-            
-            if (section === 'news') {
-                loadPosts();
-            } else if (section === 'messages') {
-                loadChannels();
-            }
+            if (section === 'news') loadPosts();
+            else if (section === 'messages') loadChannels();
         }
 
         async function logout() {
@@ -118,53 +108,50 @@
             if (result.success) {
                 document.getElementById('mainApp').style.display = 'none';
                 document.getElementById('auth').style.display = 'block';
-                session.clear(); // Очистка сессии
+                sessionStorage.clear();
             }
         }
 
         async function register() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-
             if (!username || !password) {
                 alert('Заполните все поля');
                 return;
             }
-
             const response = await fetch('/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
-
             const result = await response.json();
-            if (result.success) {
-                alert('Регистрация успешна');
-            } else {
-                alert('Ошибка: ' + result.message);
-            }
+            if (result.success) alert('Регистрация успешна');
+            else alert('Ошибка: ' + result.message);
         }
 
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-
             const response = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
-
             const result = await response.json();
             if (result.success) {
                 document.getElementById('auth').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 document.getElementById('currentUser').textContent = username;
                 
-                // Показать статус верификации
+                // Галочка подлинности
                 if (result.is_verified) {
                     document.getElementById('currentUser').innerHTML += ' <img src="https://avatars.mds.yandex.net/i?id=8113f60f587f6d213922a9596da57e63_l-5660145-images-thumbs&n=13" width="16" height="16" alt="Verified">';
                 }
+                
+                // Сохранение в sessionStorage
+                sessionStorage.setItem('username', username);
+                sessionStorage.setItem('is_moderator', result.is_moderator);
+                sessionStorage.setItem('is_verified', result.is_verified);
                 
                 showSection('news');
             } else {
@@ -177,32 +164,20 @@
             let audioPath = null;
             let videoPath = null;
 
-            // Загрузка аудио
             if (window.audioBlob) {
                 const formData = new FormData();
                 formData.append('audio', window.audioBlob, 'audio.webm');
-                const audioResponse = await fetch('/upload_audio', {
-                    method: 'POST',
-                    body: formData
-                });
+                const audioResponse = await fetch('/upload_audio', { method: 'POST', body: formData });
                 const audioResult = await audioResponse.json();
-                if (audioResult.success) {
-                    audioPath = audioResult.path;
-                }
+                if (audioResult.success) audioPath = audioResult.path;
             }
 
-            // Загрузка видео
             if (window.videoBlob) {
                 const formData = new FormData();
                 formData.append('video', window.videoBlob, 'video.webm');
-                const videoResponse = await fetch('/upload_video', {
-                    method: 'POST',
-                    body: formData
-                });
+                const videoResponse = await fetch('/upload_video', { method: 'POST', body: formData });
                 const videoResult = await videoResponse.json();
-                if (videoResult.success) {
-                    videoPath = videoResult.path;
-                }
+                if (videoResult.success) videoPath = videoResult.path;
             }
 
             const response = await fetch('/create_post', {
@@ -210,7 +185,6 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content, audio_path: audioPath, video_path: videoPath })
             });
-
             const result = await response.json();
             if (result.success) {
                 document.getElementById('postContent').value = '';
@@ -259,43 +233,30 @@
         async function editPost(postId) {
             const newContent = prompt('Новое содержание:', '');
             if (!newContent) return;
-
             const response = await fetch(`/edit_post/${postId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: newContent })
             });
-
             const result = await response.json();
-            if (result.success) {
-                loadPosts();
-            } else {
-                alert('Ошибка: ' + result.message);
-            }
+            if (result.success) loadPosts();
+            else alert('Ошибка: ' + result.message);
         }
 
         async function deletePost(postId) {
             if (!confirm('Удалить пост?')) return;
-
             const response = await fetch(`/delete_post/${postId}`, { method: 'DELETE' });
             const result = await response.json();
-            if (result.success) {
-                loadPosts();
-            } else {
-                alert('Ошибка: ' + result.message);
-            }
+            if (result.success) loadPosts();
+            else alert('Ошибка: ' + result.message);
         }
 
         async function verifyUser(username) {
             if (!confirm(`Подтвердить пользователя ${username}?`)) return;
-
             const response = await fetch(`/verify_user/${username}`, { method: 'POST' });
             const result = await response.json();
-            if (result.success) {
-                loadPosts();
-            } else {
-                alert('Ошибка: ' + result.message);
-            }
+            if (result.success) loadPosts();
+            else alert('Ошибка: ' + result.message);
         }
 
         async function startRecordingAudio() {
@@ -304,10 +265,7 @@
                 mediaRecorder = new MediaRecorder(stream);
                 chunks = [];
 
-                mediaRecorder.ondataavailable = event => {
-                    chunks.push(event.data);
-                };
-
+                mediaRecorder.ondataavailable = event => chunks.push(event.data);
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(chunks, { type: 'audio/webm' });
                     window.audioBlob = blob;
@@ -316,10 +274,8 @@
 
                 mediaRecorder.start();
                 isRecording = true;
-                document.querySelector('.media-buttons button:first-child').textContent = 'Остановить запись';
-            } catch (err) {
-                alert('Ошибка доступа к микрофону: ' + err.message);
-            }
+                document.querySelector('.media-buttons button:first-child').textContent = 'Остановить';
+            } catch (err) { alert('Ошибка: ' + err.message); }
         }
 
         async function startRecordingVideo() {
@@ -328,10 +284,7 @@
                 mediaRecorder = new MediaRecorder(stream);
                 chunks = [];
 
-                mediaRecorder.ondataavailable = event => {
-                    chunks.push(event.data);
-                };
-
+                mediaRecorder.ondataavailable = event => chunks.push(event.data);
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(chunks, { type: 'video/webm' });
                     window.videoBlob = blob;
@@ -340,16 +293,13 @@
 
                 mediaRecorder.start();
                 isRecording = true;
-                document.querySelector('.media-buttons button:last-child').textContent = 'Остановить запись';
-            } catch (err) {
-                alert('Ошибка доступа к камере: ' + err.message);
-            }
+                document.querySelector('.media-buttons button:last-child').textContent = 'Остановить';
+            } catch (err) { alert('Ошибка: ' + err.message); }
         }
 
         async function loadChannels() {
             const response = await fetch('/get_channels');
             const channels = await response.json();
-
             const list = document.getElementById('channelsList');
             list.innerHTML = channels.map(ch => 
                 `<div class="channel" onclick="selectChannel(${ch.id})">${ch.name} (${ch.type})</div>`
@@ -359,37 +309,27 @@
         async function createGroup() {
             const name = prompt('Название группы:');
             if (!name) return;
-
             const response = await fetch('/create_channel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, type: 'group' })
             });
-
             const result = await response.json();
-            if (result.success) {
-                loadChannels();
-            } else {
-                alert('Ошибка: ' + result.message);
-            }
+            if (result.success) loadChannels();
+            else alert('Ошибка: ' + result.message);
         }
 
         async function createChannel() {
             const name = prompt('Название канала:');
             if (!name) return;
-
             const response = await fetch('/create_channel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, type: 'channel' })
             });
-
             const result = await response.json();
-            if (result.success) {
-                loadChannels();
-            } else {
-                alert('Ошибка: ' + result.message);
-            }
+            if (result.success) loadChannels();
+            else alert('Ошибка: ' + result.message);
         }
 
         async function selectChannel(id) {
@@ -401,10 +341,8 @@
 
         async function loadMessages() {
             if (!currentChannelId) return;
-
             const response = await fetch(`/get_messages?channel_id=${currentChannelId}`);
             const messages = await response.json();
-
             const chatDiv = document.getElementById('chat');
             chatDiv.innerHTML = messages.map(msg => {
                 const content = msg.message ? msg.message : (msg.sticker ? getStickerEmoji(msg.sticker) : '');
@@ -421,7 +359,6 @@
         async function loadStickers() {
             const response = await fetch('/get_stickers');
             stickers = await response.json();
-
             const list = document.getElementById('stickerList');
             list.innerHTML = stickers.map(s => 
                 `<span class="sticker" onclick="sendSticker('${s.name}')">${s.emoji}</span>`
@@ -435,13 +372,11 @@
 
         async function sendSticker(name) {
             if (!currentChannelId) return;
-
             const response = await fetch('/send_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ channel_id: currentChannelId, sticker: name })
             });
-
             const result = await response.json();
             if (result.success) {
                 loadMessages();
@@ -452,13 +387,11 @@
         async function sendMessage() {
             const message = document.getElementById('message').value;
             if (!message || !currentChannelId) return;
-
             const response = await fetch('/send_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ channel_id: currentChannelId, message })
             });
-
             const result = await response.json();
             if (result.success) {
                 document.getElementById('message').value = '';
