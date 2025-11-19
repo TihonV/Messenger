@@ -234,3 +234,259 @@
                 const formData = new FormData();
                 formData.append('video', window.videoBlob, 'video.webm');
                 const videoResponse = await fetch('/upload_video', { method: 'POST', body: formData });
+                const videoResult = await videoResponse.json();
+                if (videoResult.success) videoPath = videoResult.path;
+            }
+
+            const response = await fetch('/create_post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, audio_path: audioPath, video_path: videoPath })
+            });
+            const result = await response.json();
+            if (result.success) {
+                document.getElementById('postContent').value = '';
+                window.audioBlob = null;
+                window.videoBlob = null;
+                loadPosts();
+            } else {
+                alert('Ошибка: ' + result.message);
+            }
+        }
+
+        // Загрузка постов
+        async function loadPosts() {
+            const response = await fetch('/get_posts');
+            const posts = await response.json();
+
+            const list = document.getElementById('postsList');
+            list.innerHTML = posts.map(post => {
+                let content = post.content || '';
+                let audioHtml = post.audio_path ? `<audio controls><source src="/uploads/${post.audio_path}" type="audio/webm">Ваш браузер не поддерживает аудио.</audio>` : '';
+                let videoHtml = post.video_path ? `<video controls><source src="/uploads/${post.video_path}" type="video/webm">Ваш браузер не поддерживает видео.</video>` : '';
+                let verifiedBadge = post.is_verified ? '<img src="https://avatars.mds.yandex.net/i?id=8113f60f587f6d213922a9596da57e63_l-5660145-images-thumbs&n=13" width="16" height="16" alt="Verified">' : '';
+
+                let controls = '';
+                if (sessionStorage.getItem('is_moderator') === 'true') {
+                    controls = `
+                        <div class="post-actions">
+                            <button onclick="editPost(${post.id})">✏️</button>
+                            <button onclick="deletePost(${post.id})">🗑️</button>
+                            ${post.is_verified ? '' : `<button onclick="verifyUser('${post.username}')">✅</button>`}
+                        </div>`;
+                }
+
+                return `
+                    <div class="post-card">
+                        <div class="post-header">
+                            <span class="post-author">${post.username} ${verifiedBadge}</span>
+                            <span class="post-time">${new Date(post.timestamp).toLocaleString()}</span>
+                        </div>
+                        <div class="post-content">${content}</div>
+                        ${audioHtml}
+                        ${videoHtml}
+                        ${controls}
+                    </div>`;
+            }).join('');
+        }
+
+        // Редактировать пост
+        async function editPost(postId) {
+            const newContent = prompt('Новое содержание:', '');
+            if (!newContent) return;
+            const response = await fetch(`/edit_post/${postId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newContent })
+            });
+            const result = await response.json();
+            if (result.success) loadPosts();
+            else alert('Ошибка: ' + result.message);
+        }
+
+        // Удалить пост
+        async function deletePost(postId) {
+            if (!confirm('Удалить пост?')) return;
+            const response = await fetch(`/delete_post/${postId}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.success) loadPosts();
+            else alert('Ошибка: ' + result.message);
+        }
+
+        // Верифицировать пользователя
+        async function verifyUser(username) {
+            if (!confirm(`Подтвердить пользователя ${username}?`)) return;
+            const response = await fetch(`/verify_user/${username}`, { method: 'POST' });
+            const result = await response.json();
+            if (result.success) loadPosts();
+            else alert('Ошибка: ' + result.message);
+        }
+
+        // Запись голосового
+        async function startRecordingAudio() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                chunks = [];
+
+                mediaRecorder.ondataavailable = event => chunks.push(event.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    window.audioBlob = blob;
+                    alert('Голосовое сообщение записано');
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                document.querySelector('.media-btn:first-child').textContent = '🛑 Остановить';
+            } catch (err) { alert('Ошибка доступа к микрофону: ' + err.message); }
+        }
+
+        // Запись видеокружки
+        async function startRecordingVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                chunks = [];
+
+                mediaRecorder.ondataavailable = event => chunks.push(event.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    window.videoBlob = blob;
+                    alert('Видеокружка записана');
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                document.querySelector('.media-btn:last-child').textContent = '🛑 Остановить';
+            } catch (err) { alert('Ошибка доступа к камере: ' + err.message); }
+        }
+
+        // Загрузка каналов
+        async function loadChannels() {
+            const response = await fetch('/get_channels');
+            const channels = await response.json();
+            const list = document.getElementById('channelsList');
+            list.innerHTML = channels.map(ch => 
+                `<div class="channel-item" onclick="selectChannel(${ch.id})">
+                    <span>${ch.name}</span>
+                    <small>(${ch.type})</small>
+                </div>`
+            ).join('');
+        }
+
+        // Создать группу
+        async function createGroup() {
+            const name = prompt('Название группы:');
+            if (!name) return;
+            const response = await fetch('/create_channel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, type: 'group' })
+            });
+            const result = await response.json();
+            if (result.success) loadChannels();
+            else alert('Ошибка: ' + result.message);
+        }
+
+        // Создать канал
+        async function createChannel() {
+            const name = prompt('Название канала:');
+            if (!name) return;
+            const response = await fetch('/create_channel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, type: 'channel' })
+            });
+            const result = await response.json();
+            if (result.success) loadChannels();
+            else alert('Ошибка: ' + result.message);
+        }
+
+        // Выбрать канал
+        async function selectChannel(id) {
+            currentChannelId = id;
+            document.getElementById('currentChannelHeader').textContent = `Канал: ${id}`;
+            loadMessages();
+            setInterval(loadMessages, 3000);
+        }
+
+        // Загрузка сообщений
+        async function loadMessages() {
+            if (!currentChannelId) return;
+            const response = await fetch(`/get_messages?channel_id=${currentChannelId}`);
+            const messages = await response.json();
+            const chatDiv = document.getElementById('chatMessages');
+            chatDiv.innerHTML = messages.map(msg => {
+                const content = msg.message ? msg.message : (msg.sticker ? getStickerEmoji(msg.sticker) : '');
+                return `<div class="message-item"><b>${msg.username}:</b> ${content} <i>(${new Date(msg.timestamp).toLocaleTimeString()})</i></div>`;
+            }).join('');
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        function getStickerEmoji(name) {
+            const sticker = stickers.find(s => s.name === name);
+            return sticker ? sticker.emoji : '';
+        }
+
+        // Загрузка стикеров
+        async function loadStickers() {
+            const response = await fetch('/get_stickers');
+            stickers = await response.json();
+            const list = document.getElementById('stickerList');
+            list.innerHTML = stickers.map(s => 
+                `<span class="sticker-item" onclick="sendSticker('${s.name}')">${s.emoji}</span>`
+            ).join('');
+        }
+
+        // Переключить стикеры
+        function toggleStickers() {
+            const panel = document.getElementById('stickerPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Отправить стикер
+        async function sendSticker(name) {
+            if (!currentChannelId) return;
+            const response = await fetch('/send_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channel_id: currentChannelId, sticker: name })
+            });
+            const result = await response.json();
+            if (result.success) {
+                loadMessages();
+                toggleStickers();
+            }
+        }
+
+        // Отправить сообщение
+        async function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            if (!message || !currentChannelId) return;
+            const response = await fetch('/send_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channel_id: currentChannelId, message })
+            });
+            const result = await response.json();
+            if (result.success) {
+                document.getElementById('messageInput').value = '';
+                loadMessages();
+            }
+        }
+
+        // Закрыть модальное окно
+        document.querySelector('.close').onclick = () => {
+            document.getElementById('authModal').style.display = 'none';
+        };
+
+        // Закрыть при клике вне
+        window.onclick = (event) => {
+            if (event.target === document.getElementById('authModal')) {
+                document.getElementById('authModal').style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>
