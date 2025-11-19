@@ -1,0 +1,206 @@
+body {
+    font-family: "Tahoma", "Arial", sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+    color: #333;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #ccc;
+}
+
+/* Шапка */
+.header {
+    background: #3b5998;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Навигация */
+.nav {
+    background: #f0f0f0;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ccc;
+}
+
+.nav button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin-right: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.nav button:hover {
+    background: #45a049;
+}
+
+/* Авторизация */
+#auth {
+    padding: 20px;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+textarea {
+    height: 80px;
+}
+
+button {
+    padding: 8px 12px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+/* Лента */
+#newsSection {
+    padding: 20px;
+}
+
+.post {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.post-header {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.post-content {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.media-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.post-controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+/* Сообщения */
+#messagesSection {
+    display: flex;
+}
+
+.sidebar {
+    width: 250px;
+    background: #f0f0f0;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+    overflow-y: auto;
+}
+
+.chatArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background: #fff;
+}
+
+.channel {
+    padding: 8px;
+    margin: 5px 0;
+    background: #e9e9e9;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.channel:hover {
+    background: #d9d9d9;
+}
+
+#chat {
+    flex: 1;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+    overflow-y: scroll;
+    background-color: #fafafa;
+}
+
+.message {
+    margin-bottom: 10px;
+    padding: 5px;
+    background-color: #e9e9e9;
+    border-radius: 4px;
+}
+
+.stickerPanel {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    z-index: 1000;
+    display: none;
+}
+
+.sticker {
+    font-size: 24px;
+    margin: 5px;
+    cursor: pointer;
+    display: inline-block;
+}
+
+/* Профиль */
+#profileSection {
+    padding: 20px;
+}
+
+.profile-info {
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+/* Аудио/видео */
+audio, video {
+    width: 100%;
+    margin-top: 10px;
+}
