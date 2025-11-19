@@ -5,116 +5,168 @@
     <title>Мессенджер</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="manifest" href="/manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <div class="container">
-        <div id="auth">
+    <!-- Загрузочный экран -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="spinner"></div>
+        <p>Загрузка...</p>
+    </div>
+
+    <!-- Основной контейнер -->
+    <div id="appContainer" class="container" style="display:none;">
+
+        <!-- Шапка -->
+        <header class="header">
+            <div class="logo">Мессенджер</div>
+            <div class="user-controls">
+                <span id="currentUserDisplay">Привет, <b>гость</b></span>
+                <button id="logoutBtn" onclick="logout()" style="display:none;">Выйти</button>
+            </div>
+        </header>
+
+        <!-- Навигация -->
+        <nav class="nav">
+            <button onclick="showSection('news')" class="nav-btn active">Лента</button>
+            <button onclick="showSection('messages')" class="nav-btn">Сообщения</button>
+            <button onclick="showSection('profile')" class="nav-btn">Профиль</button>
+        </nav>
+
+        <!-- Лента -->
+        <section id="newsSection" class="section">
+            <div class="post-form">
+                <textarea id="postContent" placeholder="Что у вас нового?"></textarea>
+                <div class="media-controls">
+                    <button onclick="startRecordingAudio()" class="media-btn">🎤 Голосовое</button>
+                    <button onclick="startRecordingVideo()" class="media-btn">📹 Видеокружка</button>
+                </div>
+                <button onclick="createPost()" class="submit-btn">Опубликовать</button>
+            </div>
+
+            <div id="postsList" class="posts-list">
+                <!-- Посты будут здесь -->
+            </div>
+        </section>
+
+        <!-- Сообщения -->
+        <section id="messagesSection" class="section" style="display:none;">
+            <div class="sidebar">
+                <h3>Каналы</h3>
+                <div id="channelsList" class="channels-list">
+                    <!-- Каналы будут здесь -->
+                </div>
+                <button onclick="createGroup()" class="sidebar-btn">+ Создать группу</button>
+                <button onclick="createChannel()" class="sidebar-btn">+ Создать канал</button>
+            </div>
+
+            <div class="chat-container">
+                <div id="currentChannelHeader" class="channel-header">
+                    Выберите канал
+                </div>
+                <div id="chatMessages" class="chat-messages">
+                    <!-- Сообщения будут здесь -->
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="messageInput" placeholder="Введите сообщение...">
+                    <button onclick="toggleStickers()" class="sticker-btn">😀</button>
+                    <button onclick="sendMessage()" class="send-btn">Отправить</button>
+                </div>
+
+                <!-- Стикеры -->
+                <div id="stickerPanel" class="sticker-panel">
+                    <h4>Стикеры</h4>
+                    <div id="stickerList" class="sticker-list">
+                        <!-- Стикеры будут здесь -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Профиль -->
+        <section id="profileSection" class="section" style="display:none;">
+            <div class="profile-card">
+                <h3>Ваш профиль</h3>
+                <div class="profile-info">
+                    <p><strong>Имя:</strong> <span id="profileUsername">-</span></p>
+                    <p><strong>Био:</strong> <span id="profileBio">-</span></p>
+                    <p><strong>Статус:</strong> <span id="profileStatus">-</span></p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Модальное окно для регистрации/входа -->
+    <div id="authModal" class="modal" style="display:block;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
             <h2>Регистрация / Вход</h2>
             <div class="form-group">
                 <label>Имя пользователя:</label>
-                <input type="text" id="username" placeholder="Введите имя">
+                <input type="text" id="usernameInput" placeholder="Введите имя">
             </div>
             <div class="form-group">
                 <label>Пароль:</label>
-                <input type="password" id="password" placeholder="Введите пароль">
+                <input type="password" id="passwordInput" placeholder="Введите пароль">
             </div>
-            <button onclick="register()">Зарегистрироваться</button>
-            <button onclick="login()">Войти</button>
-        </div>
-
-        <div id="mainApp" style="display:none;">
-            <div class="header">
-                <h1>Мессенджер</h1>
-                <div class="user-info">
-                    <span id="currentUser"></span>
-                    <button onclick="logout()">Выйти</button>
-                </div>
-            </div>
-
-            <div class="nav">
-                <button onclick="showSection('news')">Лента</button>
-                <button onclick="showSection('messages')">Сообщения</button>
-                <button onclick="showSection('profile')">Профиль</button>
-            </div>
-
-            <div id="newsSection" class="section">
-                <h3>Создать пост</h3>
-                <div class="form-group">
-                    <textarea id="postContent" placeholder="Что у вас нового?"></textarea>
-                    <div class="media-buttons">
-                        <button onclick="startRecordingAudio()">Голосовое</button>
-                        <button onclick="startRecordingVideo()">Видеокружка</button>
-                    </div>
-                    <button onclick="createPost()">Опубликовать</button>
-                </div>
-
-                <h3>Лента</h3>
-                <div id="posts"></div>
-            </div>
-
-            <div id="messagesSection" class="section" style="display:none;">
-                <div class="sidebar">
-                    <h3>Каналы</h3>
-                    <div id="channelsList"></div>
-                    <button onclick="createGroup()">Создать группу</button>
-                    <button onclick="createChannel()">Создать канал</button>
-                </div>
-
-                <div class="chatArea">
-                    <div id="currentChannel" style="margin-bottom:10px;"></div>
-                    <div id="chat"></div>
-                    
-                    <div class="stickerPanel" id="stickerPanel" style="display:none;">
-                        <h4>Стикеры</h4>
-                        <div id="stickerList"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <input type="text" id="message" placeholder="Введите сообщение">
-                        <button onclick="toggleStickers()">Стикеры</button>
-                        <button onclick="sendMessage()">Отправить</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="profileSection" class="section" style="display:none;">
-                <h3>Профиль</h3>
-                <div class="profile-info">
-                    <p>Имя: <span id="profileUsername"></span></p>
-                    <p>Био: <span id="profileBio"></span></p>
-                    <p>Статус: <span id="profileStatus"></span></p>
-                </div>
+            <div class="auth-buttons">
+                <button onclick="register()" class="btn-primary">Зарегистрироваться</button>
+                <button onclick="login()" class="btn-secondary">Войти</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Глобальные переменные
         let currentChannelId = null;
         let stickers = [];
         let mediaRecorder = null;
         let chunks = [];
         let isRecording = false;
 
+        // Загрузка приложения
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                loadStickers();
+            }, 1000);
+        });
+
+        // Показать секцию
         function showSection(section) {
             document.querySelectorAll('.section').forEach(el => el.style.display = 'none');
             document.getElementById(section + 'Section').style.display = 'block';
-            if (section === 'news') loadPosts();
-            else if (section === 'messages') loadChannels();
+
+            // Активная кнопка навигации
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[onclick="showSection('${section}')"]`).classList.add('active');
+
+            if (section === 'news') {
+                loadPosts();
+            } else if (section === 'messages') {
+                loadChannels();
+            }
         }
 
+        // Выход
         async function logout() {
             const response = await fetch('/logout', { method: 'POST' });
             const result = await response.json();
             if (result.success) {
-                document.getElementById('mainApp').style.display = 'none';
-                document.getElementById('auth').style.display = 'block';
+                document.getElementById('appContainer').style.display = 'none';
+                document.getElementById('authModal').style.display = 'block';
+                document.getElementById('currentUserDisplay').textContent = 'Привет, гость';
+                document.getElementById('logoutBtn').style.display = 'none';
                 sessionStorage.clear();
             }
         }
 
+        // Регистрация
         async function register() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const username = document.getElementById('usernameInput').value;
+            const password = document.getElementById('passwordInput').value;
             if (!username || !password) {
                 alert('Заполните все поля');
                 return;
@@ -125,13 +177,19 @@
                 body: JSON.stringify({ username, password })
             });
             const result = await response.json();
-            if (result.success) alert('Регистрация успешна');
-            else alert('Ошибка: ' + result.message);
+            if (result.success) {
+                alert('Регистрация успешна');
+                document.getElementById('usernameInput').value = '';
+                document.getElementById('passwordInput').value = '';
+            } else {
+                alert('Ошибка: ' + result.message);
+            }
         }
 
+        // Вход
         async function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const username = document.getElementById('usernameInput').value;
+            const password = document.getElementById('passwordInput').value;
             const response = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -139,26 +197,26 @@
             });
             const result = await response.json();
             if (result.success) {
-                document.getElementById('auth').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
-                document.getElementById('currentUser').textContent = username;
-                
-                // Галочка подлинности
+                document.getElementById('authModal').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                document.getElementById('currentUserDisplay').textContent = `Привет, ${username}`;
                 if (result.is_verified) {
-                    document.getElementById('currentUser').innerHTML += ' <img src="https://avatars.mds.yandex.net/i?id=8113f60f587f6d213922a9596da57e63_l-5660145-images-thumbs&n=13" width="16" height="16" alt="Verified">';
+                    document.getElementById('currentUserDisplay').innerHTML += ' <img src="https://avatars.mds.yandex.net/i?id=8113f60f587f6d213922a9596da57e63_l-5660145-images-thumbs&n=13" width="16" height="16" alt="Verified">';
                 }
-                
+                document.getElementById('logoutBtn').style.display = 'inline-block';
+
                 // Сохранение в sessionStorage
                 sessionStorage.setItem('username', username);
                 sessionStorage.setItem('is_moderator', result.is_moderator);
                 sessionStorage.setItem('is_verified', result.is_verified);
-                
+
                 showSection('news');
             } else {
                 alert('Ошибка: ' + result.message);
             }
         }
 
+        // Создать пост
         async function createPost() {
             const content = document.getElementById('postContent').value;
             let audioPath = null;
@@ -176,228 +234,3 @@
                 const formData = new FormData();
                 formData.append('video', window.videoBlob, 'video.webm');
                 const videoResponse = await fetch('/upload_video', { method: 'POST', body: formData });
-                const videoResult = await videoResponse.json();
-                if (videoResult.success) videoPath = videoResult.path;
-            }
-
-            const response = await fetch('/create_post', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, audio_path: audioPath, video_path: videoPath })
-            });
-            const result = await response.json();
-            if (result.success) {
-                document.getElementById('postContent').value = '';
-                window.audioBlob = null;
-                window.videoBlob = null;
-                loadPosts();
-            } else {
-                alert('Ошибка: ' + result.message);
-            }
-        }
-
-        async function loadPosts() {
-            const response = await fetch('/get_posts');
-            const posts = await response.json();
-
-            const list = document.getElementById('posts');
-            list.innerHTML = posts.map(post => {
-                let content = post.content || '';
-                let audioHtml = post.audio_path ? `<audio controls><source src="/uploads/${post.audio_path}" type="audio/webm">Ваш браузер не поддерживает аудио.</audio>` : '';
-                let videoHtml = post.video_path ? `<video controls><source src="/uploads/${post.video_path}" type="video/webm">Ваш браузер не поддерживает видео.</video>` : '';
-                let verifiedBadge = post.is_verified ? '<img src="https://avatars.mds.yandex.net/i?id=8113f60f587f6d213922a9596da57e63_l-5660145-images-thumbs&n=13" width="16" height="16" alt="Verified">' : '';
-
-                let controls = '';
-                if (sessionStorage.getItem('is_moderator') === 'true') {
-                    controls = `
-                        <button onclick="editPost(${post.id})">Редактировать</button>
-                        <button onclick="deletePost(${post.id})">Удалить</button>
-                        ${post.is_verified ? '' : `<button onclick="verifyUser('${post.username}')">Подтвердить</button>`}
-                    `;
-                }
-
-                return `
-                    <div class="post">
-                        <div class="post-header">
-                            <b>${post.username} ${verifiedBadge}</b> 
-                            <i>(${new Date(post.timestamp).toLocaleString()})</i>
-                        </div>
-                        <div class="post-content">${content}</div>
-                        ${audioHtml}
-                        ${videoHtml}
-                        <div class="post-controls">${controls}</div>
-                    </div>`;
-            }).join('');
-        }
-
-        async function editPost(postId) {
-            const newContent = prompt('Новое содержание:', '');
-            if (!newContent) return;
-            const response = await fetch(`/edit_post/${postId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: newContent })
-            });
-            const result = await response.json();
-            if (result.success) loadPosts();
-            else alert('Ошибка: ' + result.message);
-        }
-
-        async function deletePost(postId) {
-            if (!confirm('Удалить пост?')) return;
-            const response = await fetch(`/delete_post/${postId}`, { method: 'DELETE' });
-            const result = await response.json();
-            if (result.success) loadPosts();
-            else alert('Ошибка: ' + result.message);
-        }
-
-        async function verifyUser(username) {
-            if (!confirm(`Подтвердить пользователя ${username}?`)) return;
-            const response = await fetch(`/verify_user/${username}`, { method: 'POST' });
-            const result = await response.json();
-            if (result.success) loadPosts();
-            else alert('Ошибка: ' + result.message);
-        }
-
-        async function startRecordingAudio() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                chunks = [];
-
-                mediaRecorder.ondataavailable = event => chunks.push(event.data);
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'audio/webm' });
-                    window.audioBlob = blob;
-                    alert('Голосовое сообщение записано');
-                };
-
-                mediaRecorder.start();
-                isRecording = true;
-                document.querySelector('.media-buttons button:first-child').textContent = 'Остановить';
-            } catch (err) { alert('Ошибка: ' + err.message); }
-        }
-
-        async function startRecordingVideo() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                chunks = [];
-
-                mediaRecorder.ondataavailable = event => chunks.push(event.data);
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'video/webm' });
-                    window.videoBlob = blob;
-                    alert('Видеокружка записана');
-                };
-
-                mediaRecorder.start();
-                isRecording = true;
-                document.querySelector('.media-buttons button:last-child').textContent = 'Остановить';
-            } catch (err) { alert('Ошибка: ' + err.message); }
-        }
-
-        async function loadChannels() {
-            const response = await fetch('/get_channels');
-            const channels = await response.json();
-            const list = document.getElementById('channelsList');
-            list.innerHTML = channels.map(ch => 
-                `<div class="channel" onclick="selectChannel(${ch.id})">${ch.name} (${ch.type})</div>`
-            ).join('');
-        }
-
-        async function createGroup() {
-            const name = prompt('Название группы:');
-            if (!name) return;
-            const response = await fetch('/create_channel', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, type: 'group' })
-            });
-            const result = await response.json();
-            if (result.success) loadChannels();
-            else alert('Ошибка: ' + result.message);
-        }
-
-        async function createChannel() {
-            const name = prompt('Название канала:');
-            if (!name) return;
-            const response = await fetch('/create_channel', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, type: 'channel' })
-            });
-            const result = await response.json();
-            if (result.success) loadChannels();
-            else alert('Ошибка: ' + result.message);
-        }
-
-        async function selectChannel(id) {
-            currentChannelId = id;
-            document.getElementById('currentChannel').textContent = `Канал: ${id}`;
-            loadMessages();
-            setInterval(loadMessages, 3000);
-        }
-
-        async function loadMessages() {
-            if (!currentChannelId) return;
-            const response = await fetch(`/get_messages?channel_id=${currentChannelId}`);
-            const messages = await response.json();
-            const chatDiv = document.getElementById('chat');
-            chatDiv.innerHTML = messages.map(msg => {
-                const content = msg.message ? msg.message : (msg.sticker ? getStickerEmoji(msg.sticker) : '');
-                return `<div class="message"><b>${msg.username}:</b> ${content} <i>(${new Date(msg.timestamp).toLocaleTimeString()})</i></div>`;
-            }).join('');
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-        }
-
-        function getStickerEmoji(name) {
-            const sticker = stickers.find(s => s.name === name);
-            return sticker ? sticker.emoji : '';
-        }
-
-        async function loadStickers() {
-            const response = await fetch('/get_stickers');
-            stickers = await response.json();
-            const list = document.getElementById('stickerList');
-            list.innerHTML = stickers.map(s => 
-                `<span class="sticker" onclick="sendSticker('${s.name}')">${s.emoji}</span>`
-            ).join('');
-        }
-
-        function toggleStickers() {
-            const panel = document.getElementById('stickerPanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        }
-
-        async function sendSticker(name) {
-            if (!currentChannelId) return;
-            const response = await fetch('/send_message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ channel_id: currentChannelId, sticker: name })
-            });
-            const result = await response.json();
-            if (result.success) {
-                loadMessages();
-                toggleStickers();
-            }
-        }
-
-        async function sendMessage() {
-            const message = document.getElementById('message').value;
-            if (!message || !currentChannelId) return;
-            const response = await fetch('/send_message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ channel_id: currentChannelId, message })
-            });
-            const result = await response.json();
-            if (result.success) {
-                document.getElementById('message').value = '';
-                loadMessages();
-            }
-        }
-    </script>
-</body>
-</html>
